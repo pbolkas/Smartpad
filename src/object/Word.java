@@ -19,7 +19,14 @@ public class Word implements theWord {//an object that represents a word inside 
         this.prob=dll;
     }
     
-    public Word(int serial,String theWord,int length,int begin,int end,DoubleLinkedList dll){
+    public Word(long serial,String theWord,int length,int begin,int end){
+        this.serial=serial;
+        this.theWord=theWord;
+        this.begin=begin;
+        this.end=end;
+    }
+    
+    public Word(long serial,String theWord,int length,int begin,int end,DoubleLinkedList dll){
         this.serial=serial;
         this.theWord=theWord;
         this.length=length;

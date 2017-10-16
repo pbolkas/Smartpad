@@ -16,22 +16,26 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import DoubleLinkedList.*;//library to use the double linked list data structure
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import static java.lang.Thread.yield;
 import object.*;//library to use the objects word,text,punctuation
 import javax.swing.undo.*;//library to use the undo utilization 
-import java.lang.Thread.*;
-import static java.lang.Thread.sleep;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ *
+ * @author Pavlos Bolkas
+ *
+ * Notepad application with artificial intelligence correction ai mechanism is
+ * imported with prolog dirty debugging is used sometimes "multi-threaded"
+ *
+ */
 public class Notepad extends javax.swing.JFrame {
 
     String name = ""; // variable to store the filename
     String text = ""; // variable to store all the text typed or loaded
     Utilities utils = new Utilities(); // create object of utilities to use all teh functions inside
     UndoManager um = new UndoManager();// create object of undomanager to have the utilitie of the undo and redo
-    Text theText;
+    boolean done = false;//this is used for thread execution
 
     public void setImage() { //sets the icon images in the upper left side of the windows
         ImageIcon icon = new ImageIcon(".\\notepad.jpg");
@@ -61,8 +65,8 @@ public class Notepad extends javax.swing.JFrame {
         this.setSize(700, 500);//sets the size of the window
         this.setLocation(300, 30);//sets the window int this position int the screen
 
-        theTextPanel.getDocument().addUndoableEditListener(um);//add undo to myText (the text area)
-        theTextPanel.setComponentPopupMenu(rclick); //sets a popup menu to be shown inside the text panel
+        this.smartText.getDocument().addUndoableEditListener(um);//add undo to myText (the text area)
+        this.smartText.setComponentPopupMenu(rclick); //sets a popup menu to be shown inside the text panel
     }
 
     /**
@@ -90,8 +94,8 @@ public class Notepad extends javax.swing.JFrame {
         fonts = new javax.swing.JComboBox();
         fontSizes = new javax.swing.JComboBox();
         pan = new javax.swing.JPanel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        theTextPanel = new javax.swing.JTextPane();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        smartText = new object.smartTextArea();
         toolbar = new javax.swing.JToolBar();
         countWC = new javax.swing.JLabel();
         tool_Open = new javax.swing.JButton();
@@ -227,34 +231,17 @@ public class Notepad extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        theTextPanel.addCaretListener(new javax.swing.event.CaretListener() {
-            public void caretUpdate(javax.swing.event.CaretEvent evt) {
-                theTextPanelCaretUpdate(evt);
-            }
-        });
-        theTextPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                theTextPanelMouseClicked(evt);
-            }
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-                theTextPanelMousePressed(evt);
-            }
-        });
-        jScrollPane2.setViewportView(theTextPanel);
+        jScrollPane3.setViewportView(smartText);
 
         javax.swing.GroupLayout panLayout = new javax.swing.GroupLayout(pan);
         pan.setLayout(panLayout);
         panLayout.setHorizontalGroup(
             panLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 504, Short.MAX_VALUE)
-            .addGroup(panLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE))
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 504, Short.MAX_VALUE)
         );
         panLayout.setVerticalGroup(
             panLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 310, Short.MAX_VALUE)
-            .addGroup(panLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 310, Short.MAX_VALUE))
+            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 310, Short.MAX_VALUE)
         );
 
         getContentPane().add(pan, java.awt.BorderLayout.CENTER);
@@ -330,6 +317,9 @@ public class Notepad extends javax.swing.JFrame {
         });
         toolbar.add(correctIcon);
 
+        wordSelector.setMaximumSize(new java.awt.Dimension(150, 20));
+        wordSelector.setMinimumSize(new java.awt.Dimension(150, 30));
+        wordSelector.setPreferredSize(new java.awt.Dimension(150, 20));
         toolbar.add(wordSelector);
 
         next.setText("next");
@@ -543,7 +533,7 @@ public class Notepad extends javax.swing.JFrame {
 
     private void clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearActionPerformed
         //this method clears the text
-        theTextPanel.setText("");//set text to thetextpanel to nothing
+        this.smartText.setText("");//set text to thetextpanel to nothing
         //myText.setText("");//set text to mytext to nothing
         this.setTitle("Smartpad"); //sets the window title to Smartpad
         name = "";//clears the filename
@@ -552,12 +542,12 @@ public class Notepad extends javax.swing.JFrame {
 
     private void PasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PasteActionPerformed
 
-        theTextPanel.paste();//pastes a copied or cut piece of text
+        this.smartText.paste();//pastes a copied or cut piece of text
     }//GEN-LAST:event_PasteActionPerformed
 
     private void CheckActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CheckActionPerformed
         // calls the method to correct the text
-
+        instantlyCorrect();
     }//GEN-LAST:event_CheckActionPerformed
 
     private void HelpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_HelpActionPerformed
@@ -586,36 +576,36 @@ public class Notepad extends javax.swing.JFrame {
     private void insert_wordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insert_wordActionPerformed
         //this method is called when we want to add a new word to our database of correct words
         //store into string the word that we want to add
-        String toIns = theTextPanel.getSelectedText();
+        String toIns = this.smartText.getSelectedText();
         //calls the method that inserts this word to the database
         utils.insertToFile(toIns);
     }//GEN-LAST:event_insert_wordActionPerformed
 
     private void CutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CutActionPerformed
         //cuts a piece of text
-        theTextPanel.cut();
+        this.smartText.cut();
     }//GEN-LAST:event_CutActionPerformed
 
     private void CopyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CopyActionPerformed
         //copies a piece of text
-        theTextPanel.copy();
+        this.smartText.copy();
     }//GEN-LAST:event_CopyActionPerformed
 
     private void cutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cutActionPerformed
-        theTextPanel.cut();
+        this.smartText.cut();
     }//GEN-LAST:event_cutActionPerformed
 
     private void copyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_copyActionPerformed
-        theTextPanel.copy();
+        this.smartText.copy();
     }//GEN-LAST:event_copyActionPerformed
 
     private void pasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pasteActionPerformed
-        theTextPanel.paste();
+        this.smartText.paste();
     }//GEN-LAST:event_pasteActionPerformed
 
     private void insert_to_DictActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insert_to_DictActionPerformed
         //this method inserts the selected word to the database of the right words
-        String toIns = theTextPanel.getSelectedText();
+        String toIns = this.smartText.getSelectedText();
         utils.insertToFile(toIns);
     }//GEN-LAST:event_insert_to_DictActionPerformed
 
@@ -636,15 +626,11 @@ public class Notepad extends javax.swing.JFrame {
         //this method checks just one word if it is right or wrong
         //this method is called when user right clicks int the textarea and selects a text and the option to check just this word
         //store the selected word in a string
-        String word = theTextPanel.getSelectedText();
-        //print the word (this was added for the developer to see)
-        System.out.println(word);
+        String word = this.smartText.getSelectedText();
         //calls the checkOne method and puts what it returns to the word variable
         word = utils.checkOne(word);
-        //prints the new word (check for the developer)
-        System.out.println(word);
         //replaces in the textpanel the selected text with the correct one
-        theTextPanel.replaceSelection(word);
+        this.smartText.replaceSelection(word);
     }//GEN-LAST:event_checkThisWordActionPerformed
 
     private void fastActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fastActionPerformed
@@ -663,19 +649,20 @@ public class Notepad extends javax.swing.JFrame {
         //and it's called when user clicks on the redo button
         um.redo();
     }//GEN-LAST:event_redoOperationActionPerformed
-    Thread correctWithProbablesThread;
-    private void correctIconActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_correctIconActionPerformed
-        correctWithProbablesThread = new Thread() {
-            public synchronized void run() {
-                substitute();//call method substitute
+    Thread correctWithProbablesThread = new Thread() {
+        public synchronized void run() {
+            substitute();//call method substitute
+        }
+    };
 
-            }
-        };
-//this method is called when user clicks on the correct button to make the file correct
+    ;
+    private void correctIconActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_correctIconActionPerformed
+
+        //this method is called when user clicks on the correct button to make the file correct
         if (((String) this.correctWithProbablesThread.getState().toString()).equals("TERMINATED")) {
             System.out.println("thread has terminated");
-            //this.correctWithProbablesThread.run();
 
+            this.correctWithProbablesThread.start();
         } else {
             this.correctWithProbablesThread.start();
         }
@@ -688,6 +675,7 @@ public class Notepad extends javax.swing.JFrame {
         um.undo();
     }//GEN-LAST:event_undoIconOnBarActionPerformed
 
+
     private void redoIconOnBarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_redoIconOnBarActionPerformed
         //this method redoes the actions that had been undone in the textpanel
         //and it's called when user clicks on the redo button
@@ -696,38 +684,35 @@ public class Notepad extends javax.swing.JFrame {
 
     private void fontSizesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fontSizesActionPerformed
         //this method changes the font size in the text panel
-        Font f = theTextPanel.getFont();
+        Font f = this.smartText.getFont();
         float size = Float.parseFloat(fontSizes.getSelectedItem() + "");
-        theTextPanel.setFont(f.deriveFont(size));
+        this.smartText.setFont(f.deriveFont(size));
 
     }//GEN-LAST:event_fontSizesActionPerformed
 
     private void fontsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fontsActionPerformed
         //this method changes the font int the text panel
         String theFont = (String) fonts.getSelectedItem();
-        Font f = theTextPanel.getFont();
+        Font f = this.smartText.getFont();
         Font f1 = new Font(theFont, f.getStyle(), f.getSize());
-        theTextPanel.setFont(f1);
+        this.smartText.setFont(f1);
     }//GEN-LAST:event_fontsActionPerformed
 
-    private void theTextPanelCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_theTextPanelCaretUpdate
-        //this method is called on caret update to count the words and the characters
-        counts();
-    }//GEN-LAST:event_theTextPanelCaretUpdate
-
-    private void theTextPanelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_theTextPanelMouseClicked
-
-    }//GEN-LAST:event_theTextPanelMouseClicked
-
-    private void theTextPanelMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_theTextPanelMousePressed
-
-    }//GEN-LAST:event_theTextPanelMousePressed
-
+    int wordBalance = 0;// this balances between the number of the words in case the word is being
+    //substituted has different length of the new word
     private void nextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextActionPerformed
-        
-        System.out.println("state before next " + this.correctWithProbablesThread.getState());
-        changeDone();
-        System.out.println("state after next " + this.correctWithProbablesThread.getState());
+        //executes when next button is hit
+        smartMenuItem smi = (smartMenuItem) wordSelector.getSelectedItem();
+        //here the old word should be replaced with the new from wordSelector and then the text should be updated
+        synchronized (correctWithProbablesThread) {
+            //first change the word
+
+            this.smartText.changeTheWrong(smi.getProb().getSerial(), smi.getProb().getTheWord());
+            //second update the text
+            this.smartText.updateText();
+            correctWithProbablesThread.notify();
+        }
+
     }//GEN-LAST:event_nextActionPerformed
 
     /**
@@ -769,7 +754,7 @@ public class Notepad extends javax.swing.JFrame {
 
     void counts() {
 
-        String str = theTextPanel.getText();
+        String str = this.smartText.getText();
         chars = (String.valueOf(str.length()));
 
         String[] strsplit = str.split("\\s");
@@ -810,7 +795,7 @@ public class Notepad extends javax.swing.JFrame {
                     //open the file
                     fw = new FileReader(filen);
                     //read the file and write it to the Text Panel
-                    theTextPanel.read(fw, null);
+                    this.smartText.read(fw, null);
                     //close the file
                     fw.close();
 
@@ -834,7 +819,7 @@ public class Notepad extends javax.swing.JFrame {
                 //open the file or a create a new file
                 fw = new FileWriter(name);
                 //read the textpanel and write it in the file
-                theTextPanel.write(fw);
+                this.smartText.write(fw);
                 //close the file
                 fw.close();
             } catch (IOException ex) {
@@ -859,113 +844,92 @@ public class Notepad extends javax.swing.JFrame {
             } else {
                 try {
                     fw = new FileWriter(filen);
-                    theTextPanel.write(fw);
+                    this.smartText.write(fw);
                     fw.close();
                 } catch (IOException ex) {
                 }
             }
         }
     }
-    /*Thread correctWithProbablesThread = new Thread() {
-     public synchronized void run() {
-     substitute();//call method substitute
-    
-     }
-     };*/
-
-    //thus method makes the substitute method to wait until user presses next button
-    Thread stopCorrect = new Thread() {
-
-        @Override
-        public synchronized void run() {
-            while (done) {//while done is true
-                try {
-                    changeDone();//make done true and notify all the threads
-                    stopCorrect.wait();//wait until done is true, it only gets true when user presses next
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        }
-
-    };
-    boolean done = false;
 
     synchronized void substitute() {
-        System.out.println("correctWithProbables");//this is used for the developer to see what method is used
+        Text temp = new Text();
 
-        String text = theTextPanel.getText(); //get the text of all the panel
-        Text textWithProbable = new Text().seperated(text); // seperate into different lists that will be combined in one object the TEXT obejct
-        theTextPanel.setText(textWithProbable.getPureText()); // get pure text of this object
-        theText = textWithProbable; // set the notepad variable setted as the text we proccessed earlier
-        int balance = 0;//variable to store the difference between the wrong word and the correct word in characters
-        DoubleLinkedList words = theText.getWords(); //take the list of all the words
-        DoubleNode node = words.getFirstNode(); //get the first word of them
-        int size = words.size(); //get the size of all words list
-        int psize; //size of the probable words for each word list
-        DoubleNode probableNode; //a probable word that is in the probables of each word list
-        JMenuItem item;//item that will be in word selector
-        Word underCorrection;
+        String text = this.smartText.getText(); //get the text of all the panel
+        smartText.setTheText(temp.seperated(text));//takes the string from inside thesmart 
 
-        for (int i = 0; i < size; i++) {
-            underCorrection = ((Word) node.getItem());
+        int loops = smartText.getTheText().getWords().size();
+        DoubleNode currentWord = smartText.getTheText().getWords().getFirstNode();
+        for (int i = 0; i < loops; i++) {
+            Word current = ((Word) currentWord.getItem());
+            //fist clean wordselector from previous usage
+            wordSelector.removeAllItems();
+            //then set the focus to it
+            this.smartText.requestFocus();
 
-            wordSelector.removeAllItems(); //clear combo box
-            wordSelector.addItem("");
-            psize = ((Word) node.getItem()).getList().size();//get size of probables for the n-th word
-            probableNode = ((Word) node.getItem()).getList().getFirstNode(); // get the first probable word of the n-th word
-            theTextPanel.select(underCorrection.getBegin(), underCorrection.getEnd() + 1);
-            for (int j = 0; j < psize; j++) { //for each of the n probable words
-                Word prob = ((Word) probableNode.getItem()); //take the word from inside the node
-                System.out.println(underCorrection.toString());
-                //item = new JMenuItem(prob.getTheWord()); //put the string of the word inside the item object
-                System.out.println("prob=" + prob.getTheWord());
-                //item.putClientProperty(prob.getSerial(), prob); //put client property the whole object of tis word
-                wordSelector.addItem(prob.getTheWord()); // add the n-th probable word to the word selector
-                probableNode = probableNode.getNext(); // take the next probable word
-                //theTextPanel.select(((int)underCorrection.getBegin() + balance), ((int)((underCorrection.getEnd() + 1) + balance)));
+            //set selected the old
+            this.smartText.setSelectionStart(current.getBegin());
+            this.smartText.setSelectionEnd(current.getEnd() + 1);
 
-                if ((((String) wordSelector.getSelectedItem()).length() < theTextPanel.getSelectedText().length())
-                        || (((String) wordSelector.getSelectedItem()).length() > theTextPanel.getSelectedText().length())) {
-                    balance += ((int) (((String) wordSelector.getSelectedItem()).length() - theTextPanel.getSelectedText().length()));
-                } /*else if (((Word) wordSelector.getSelectedItem()).getLength() > theTextPanel.getSelectedText().length()) {
-                 balance += ((Word) wordSelector.getSelectedItem()).getLength() - theTextPanel.getSelectedText().length();
-                 }*/
+                //System.out.println("Original word toString:" + current.toString());
+            //till here it just highlights every word in the text
+            //take the first probable word
+            DoubleNode currentProb = ((DoubleNode) current.getProb().getFirstNode());
+
+            for (int j = 0; j < current.getProb().size(); j++) {
+
+                    //here creates a new smartMenuItem instance for each probable word and adds it into the word selector combobox
+                //smartMenuItem smi=new smartMenuItem(new Word("pavlos"),"HELLO");
+                smartMenuItem smi = new smartMenuItem((Word) currentProb.getItem(), ((Word) currentProb.getItem()).getTheWord(), current.getLength());
+                wordSelector.insertItemAt(smi, j);
+
+                currentProb = currentProb.getNext();
 
             }
-            System.out.println("state inside " + this.correctWithProbablesThread.getState());
-            try {
-                while (!done) { // while done false
-                    wait(); //wait until user presses next and thread continues executing, took me a whole day to make this work
+            wordSelector.addItem(new smartMenuItem(current, this.smartText.getSelectedText()));
 
-                }
+            currentWord = currentWord.getNext();
+            //now pause the correction thread to make correction choices
+
+            wordSelector.setSelectedIndex(0);
+
+            try {
+                correctWithProbablesThread.wait();
+
             } catch (InterruptedException ex) {
                 Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE, null, ex);
             }
-            theTextPanel.select(underCorrection.getBegin(), (int) (underCorrection.getEnd() + 1));
-            System.out.println("begin=" + underCorrection.getBegin());
-            System.out.println("end=" + (int) (underCorrection.getEnd() + 1));
-            /*try {
-             sleep(10000);
-             } catch (InterruptedException ex) {
-             Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE, null, ex);
-             }*/
-            for (int a = 0; a < 1; a++) {
-                //processor needs some time because some code is mixed
-            }
-            theTextPanel.replaceSelection(wordSelector.getSelectedItem() + "");
-            done = false;//done is false to give user chance to change the next word
 
-            node = node.getNext();// get the next node ( possibly wrong word )
+            wordSelector.removeAllItems();
         }
 
     }
 
-    synchronized void changeDone() {
-        done = true;
-        System.out.println("done=" + done);
-        notifyAll();
+    //this method corrects the file instantly and replaces each word with each first probable word
+    //inside loop the counter stops before the last because of the space added during the correction process
+    private void instantlyCorrect() {
+        Text txt = new Text().seperated(this.smartText.getText());
+        String newText = "";
+        DoubleNode currentOb = txt.getTheText().getFirstNode();
+        for (int i = 0; i < txt.getTheText().size() - 1; i++) {
+            if (currentOb.getItem() instanceof Word) {
+                Word tempWord = ((Word) currentOb.getItem());
+                if (tempWord.getProb().size() == 0) {
+                    newText += tempWord.getTheWord();
+                } else {
+                    newText += ((Word) (tempWord.getProb().getFirstNode()).getItem()).getTheWord();
+                }
+            } else if (currentOb.getItem() instanceof Punctuation) {
+                newText += ((Punctuation) currentOb.getItem()).getCharacter();
+            }
+            currentOb = currentOb.getNext();
+        }
+
+        this.smartText.setText(newText);
+        //this.smartText.changeSingleWord(0);
     }
+
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem About;
     private javax.swing.JDialog About_Dialog;
@@ -997,7 +961,7 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JToolBar.Separator jSeparator3;
@@ -1011,7 +975,7 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JPopupMenu rclick;
     private javax.swing.JButton redoIconOnBar;
     private javax.swing.JMenuItem redoOperation;
-    private javax.swing.JTextPane theTextPanel;
+    private object.smartTextArea smartText;
     private javax.swing.JButton toolSave;
     private javax.swing.JButton tool_Open;
     private javax.swing.JButton tool_SaveAs;
@@ -1020,90 +984,5 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem undoOperation;
     private javax.swing.JComboBox wordSelector;
     // End of variables declaration//GEN-END:variables
-    //under here there are useless methods
-    /*
-     public void fastEdition() {
-     //myText.setText(theTextPanel.getText());
-     String text = myText.getText();
 
-     DoubleLinkedList wordList = utils.fifthEditionCorrection(text.substring(position,text.length()));
-
-     DoubleNode node = wordList.getFirstNode();
-     JPopupMenu prob;
-
-     while (node != null) {
-     if (node.getItem() instanceof Word) {
-     String word = (((Word) node.getItem()).getTheWord());
-
-     System.out.println("position=" + position + " wordLength=" + word.length());
-     //
-     myText.replaceRange(word, position, word.length() + position);
-                
-     prob = new JPopupMenu("");
-     myText.setCaretPosition(position + word.length());
-
-     MListen lstnr = new MListen(prob, myText);
-
-     DoubleLinkedList probs = (((Word) node.getItem()).getList());
-     DoubleNode probNode = probs.getFirstNode();
-     for (int j = 0; j < probs.size(); j++) {
-     if (probNode.getItem() instanceof Word) {
-
-     Word w = ((Word) probNode.getItem());
-
-     JMenuItem item = new JMenuItem(w.getTheWord());
-
-     w.setBegin(position);
-     w.setEnd((word).length() + position);
-
-     item.putClientProperty(w.getTheWord(), w);
-
-     //item.addMouseListener(lstnr);
-     MListen al=new MListen(prob,myText);
-     item.addMouseListener(al);
-
-     prob.add(item);
-
-     probNode = probNode.getNext();
-     }
-     }
-                
-     Rectangle rectangle = new Rectangle();
-     position += word.length();
-     try {
-     rectangle = myText.modelToView(myText.getCaretPosition());
-     } catch (BadLocationException ex) {
-     Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE, null, ex);
-     }
-     prob.show(this, (int) rectangle.getX() - (int) rectangle.width, (int) rectangle.getY()+100);
-
-     } else {
-     position += 1;
-     }
-
-     node = node.getNext();
-     }
-     wordList = new DoubleLinkedList();
-     }
-     */
-    /*
-     void correctText() {
-     text = theTextPanel.getText();
-     //text = utils.newCorrection(text);
-     text = utils.thirdCor(text);
-     theTextPanel.setText(text);
-     text = "";
-     }*/
-
-    /*
-     //this method fills the combobox with available fonts
-     void fillFonts() {
-     Font f = theTextPanel.getFont();
-    
-     String fontsList[] = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-    
-     for (int i = 0; i < fontsList.length; i++) {
-     fonts.addItem(fontsList[i]);
-     }
-     }*/
 }

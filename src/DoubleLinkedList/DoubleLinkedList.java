@@ -79,6 +79,20 @@ public class DoubleLinkedList implements List {
         }
     }
 
+    public DoubleNode getAny(int position) {
+        DoubleNode temp = this.firstNode;
+        if (position == 0) {
+            return this.getFirstNode();
+        } else if (position == this.size()) {
+            return this.getLastNode();
+        } else {
+            for (int i = 0; i < position; i++) {
+                temp = temp.getNext();
+            }
+        }
+        return temp;
+    }
+
     @Override
     public void insertLast(Object data) {
         if (isEmpty()) {
@@ -138,14 +152,31 @@ public class DoubleLinkedList implements List {
     public boolean exists(Object toAdd) {
         DoubleNode current = firstNode;
         while (current != null) {
-            if (((Word)current.getItem()).getTheWord().equals(toAdd)) {
+            if (((Word) current.getItem()).getTheWord().equals(toAdd)) {
                 return true;
             }
             current = current.getNext();
         }
         return false;
     }
-    
+
+    //changes any node of the list with a new Item
+
+    public void changeAny(int pos, Object w) {
+        DoubleNode temp = this.firstNode;
+
+        if (pos == 0) {
+            this.firstNode.setItem(w);
+        } else if (pos == this.size()) {
+            this.lastNode.setItem(w);
+        } else {
+            for (int i = 0; i < pos; i++) {
+                temp = temp.getNext();
+            }
+            temp.setItem(w);
+        }
+    }
+
     public static void main(String args[]) {
         DoubleLinkedList dll = new DoubleLinkedList();
 
@@ -154,8 +185,13 @@ public class DoubleLinkedList implements List {
         dll.insertFirst("d");
         dll.insertFirst("c");
         dll.insertFirst("b");
-        
-        System.out.println(dll.exists("a"));
+
+        //System.out.println(dll.exists("a"));
+        System.out.println((((DoubleNode) dll.getAny(2)).getItem()));
+
+        dll.changeAny(1, "p");
+
+        System.out.println((((DoubleNode) dll.getAny(1)).getItem()));
     }
 
 }

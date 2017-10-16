@@ -6,7 +6,10 @@
 package object;
 
 import DoubleLinkedList.*;
+import Notepad.Notepad;
 import Utilities.Utilities;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,6 +35,8 @@ public class Text implements theText {//object of the whole text that contains w
         this.punctuation = punctuation;
         this.theText = theText;
     }
+    
+    
 
     public Text seperated(String text) {
         int count = 0;
@@ -42,7 +47,11 @@ public class Text implements theText {//object of the whole text that contains w
             crnt = text.charAt(i);
             if (Utilities.charIn(crnt)) {
                 if (word.length() > 0) {
-                    Word thisWord = new Word(count, word, word.length(), i - word.length(), i - 1, utils.probableWords(new Word(count, word)));
+                    
+                    Word thisWord = new Word(count, word, word.length(), i - word.length(), i - 1, utils.probableWords(new Word(count, word,word.length(),i-word.length(),i-1)));
+                    
+                    //Word thisWord = new Word(count, word, word.length(), i - word.length(), i - 1, utils.probableWords(new Word(count, word)));
+                    
                     this.words.insertLast(thisWord);
                     word = "";
                     this.theText.insertLast(thisWord);
@@ -60,22 +69,23 @@ public class Text implements theText {//object of the whole text that contains w
         return new Text(this.words, this.punctuation, this.theText);
     }
 
-    public Text substitute(Word theWord, Text theText) {
-        DoubleNode node = this.theText.getFirstNode();
-        int size = this.theText.size();
-        for (int i = 0; i < size; i++) {
-            if (node.getItem() instanceof Word) {
-                if (((Word) node.getItem()).serial == theWord.serial) {
-                    node.setItem(new Word(theWord.serial, theWord.getTheWord()));
-                }
-            } else if (node.getItem() instanceof Punctuation) {
-
-            }
-            node = node.getNext();
-        }
-        return theText;
+    
+    /*public Text substitute(Word theWord, Text theText) {
+    DoubleNode node = this.theText.getFirstNode();
+    int size = this.theText.size();
+    for (int i = 0; i < size; i++) {
+    if (node.getItem() instanceof Word) {
+    if (((Word) node.getItem()).serial == theWord.serial) {
+    node.setItem(new Word(theWord.serial, theWord.getTheWord()));
     }
-
+    } else if (node.getItem() instanceof Punctuation) {
+    
+    }
+    node = node.getNext();
+    }
+    return theText;
+    }*/
+    
     public String getPureText() {
         String text = "";
         int length = this.theText.size();
@@ -92,9 +102,6 @@ public class Text implements theText {//object of the whole text that contains w
         return text.substring(0, text.length() - 1);
     }
 
-    public void instantCorrect() {
-        
-    }
 
     public void setWords(DoubleLinkedList dll) {
         this.words = dll;
@@ -119,12 +126,26 @@ public class Text implements theText {//object of the whole text that contains w
     public void setTheText(DoubleLinkedList theText) {
         this.theText = theText;
     }
+    
+    //this method substitutes a word in the text with a probable that is selected from "WordSelector"
+    public void substitute(long wordPosition, String newWord){
+        //get the DoubleNode where the old word exists
+        DoubleNode temp=this.theText.getAny((int) wordPosition);
+        //make it Word
+        Word w=(Word)temp.getItem();
+        
+        //set the new value for this Word
+        w.setTheWord(newWord);
+        
+        //change the item in the list
+        this.theText.changeAny((int)wordPosition,w);
+    }
 
     public static void main(String args[]) {
         String text = "The earliest known appearance of the phrase is from The Michigan School Moderator, a "
                 + "journal that provided many teachers with education-related news and suggestions for lessons.";
         
-        text="palvos";
+        //text="palvos";
         Text tt = new Text(text);
 
         Text sep = tt.seperated(text);
@@ -133,14 +154,7 @@ public class Text implements theText {//object of the whole text that contains w
         DoubleLinkedList pdll = sep.getPunctuation();
         DoubleLinkedList tdll = sep.getTheText();
 
-        wdll.printList();
-        //pdll.printList();
-        //tdll.printList();
-
-        /*sep.substitute(new Word(0, "pavlos"), sep);
-
-        tdll = sep.getTheText();
-        tdll.printList();*/
+        tdll.printList();
     }
 
 }

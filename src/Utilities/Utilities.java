@@ -10,8 +10,10 @@ import javax.swing.ImageIcon;//library for the icons
 import javax.swing.JTextArea;//library for the area where tha user types
 import jpl.fli.Prolog;//library for prolog connection
 
+
 public class Utilities {
 
+    
     //being used
     //takes a word from the text and makes all the necessary work to check it with prolog and returns it corrected or not
     public String checkOne(String word) {
@@ -99,7 +101,7 @@ public class Utilities {
         
         try {
             DoubleLinkedList list = new DoubleLinkedList();//new list that will return tha list with the probable words
-            Query q = new Query("consult", new Term[]{new Atom("..\\Notepad\\cor.pl")});
+            Query q = new Query("consult", new Term[]{new Atom("..\\Smartpad\\cor.pl")});
             System.out.println("consult " + (q.query() ? "succeeded" : "failed"));
 
             String toAdd = "";
@@ -119,7 +121,7 @@ public class Utilities {
             if (q1.hasSolution()) {
                 toAdd = makeItReady(result.get("X").toString());
                 if (!(list.exists(toAdd))) {
-                    list.insertFirst(new Word(toAdd, w.getBegin(), w.getEnd()));
+                    list.insertFirst(new Word(w.getSerial(),toAdd,w.getLength(), w.getBegin(), w.getEnd()));
                     
                 }
             }
@@ -130,7 +132,7 @@ public class Utilities {
             if (q1.hasSolution()) {
                 toAdd = makeItReady(result.get("X").toString());
                 if (!(list.exists(toAdd))) {
-                    list.insertFirst(new Word(toAdd, w.getBegin(), w.getEnd()));
+                    list.insertFirst(new Word(w.getSerial(),toAdd,w.getLength(), w.getBegin(), w.getEnd()));
                 }
             }
 
@@ -140,7 +142,7 @@ public class Utilities {
             if (q1.hasSolution()) {
                 toAdd = makeItReady(result.get("X").toString());
                 if (!(list.exists(toAdd))) {
-                    list.insertFirst(new Word(toAdd, w.getBegin(), w.getEnd()));
+                    list.insertFirst(new Word(w.getSerial(),toAdd,w.getLength(), w.getBegin(), w.getEnd()));
                 }
             }
 
@@ -150,7 +152,7 @@ public class Utilities {
             if (q1.hasSolution()) {
                 toAdd = makeItReady(result.get("X").toString());
                 if (!(list.exists(toAdd))) {
-                    list.insertFirst(new Word(toAdd, w.getBegin(), w.getEnd()));
+                    list.insertFirst(new Word(w.getSerial(),toAdd,w.getLength(), w.getBegin(), w.getEnd()));
                 }
             }
 
@@ -160,7 +162,7 @@ public class Utilities {
             if (q1.hasSolution()) {
                 toAdd = makeItReady(result.get("X").toString());
                 if (!(list.exists(toAdd))) {
-                    list.insertFirst(new Word(toAdd, w.getBegin(), w.getEnd()));
+                    list.insertFirst(new Word(w.getSerial(),toAdd,w.getLength(), w.getBegin(), w.getEnd()));
                 }
             }
 
@@ -171,7 +173,7 @@ public class Utilities {
             if (q1.hasSolution()) {
                 toAdd = makeItReady(result.get("X").toString());
                 if (!(list.exists(toAdd))) {
-                    list.insertFirst(new Word(toAdd, w.getBegin(), w.getEnd()));
+                    list.insertFirst(new Word(w.getSerial(),toAdd,w.getLength(), w.getBegin(), w.getEnd()));
                 }
             }
             return list;
@@ -192,7 +194,7 @@ public class Utilities {
         initText += " ";
         String word = "";
         String toAdd = "";
-        Query q = new Query("consult", new Term[]{new Atom("..\\Notepad\\cor.pl")});
+        Query q = new Query("consult", new Term[]{new Atom("..\\Smartpad\\cor.pl")});
         String s = ("consult " + (q.query() ? "succeeded" : "failed"));
 
         for (int i = 0; i < initText.length(); i++) {
@@ -288,7 +290,7 @@ public class Utilities {
     //active
     //this method takes a word and passes it through a prolog file to take it corrected or not?
     public String checkWithPl(String text) {
-        Query q1 = new Query("consult", new Term[]{new Atom("..\\Notepad\\cor.pl")});//calls a prolog file 'cor.pl' where the dictionary and the ai methods are implemented
+        Query q1 = new Query("consult", new Term[]{new Atom("..\\Smartpad\\cor.pl")});//calls a prolog file 'cor.pl' where the dictionary and the ai methods are implemented
 
         //if the connection with the prolog file is successfull then it will show "succeded" else it will show "failed"
         String s = ("consult " + (q1.query() ? "succeeded" : "failed"));
@@ -441,7 +443,7 @@ public class Utilities {
         toIns += ").";
         toIns = toIns.trim();
 
-        Query q1 = new Query("consult", new Term[]{new Atom("..\\Notepad\\cor.pl")});
+        Query q1 = new Query("consult", new Term[]{new Atom("..\\Smartpad\\cor.pl")});
 
         String s = ("consult " + (q1.query() ? "succeeded" : "failed"));
         try {
