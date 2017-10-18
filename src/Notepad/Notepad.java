@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * imported with prolog dirty debugging is used sometimes "multi-threaded"
  *
  */
-public class Notepad extends javax.swing.JFrame {
+public class Notepad extends javax.swing.JFrame  {
 
     String name = ""; // variable to store the filename
     String text = ""; // variable to store all the text typed or loaded
@@ -55,8 +55,9 @@ public class Notepad extends javax.swing.JFrame {
     public Notepad() {
         initComponents();
         /*correctInstantlyThread.setDaemon(true);
-         correctWithProbablesThread.setDaemon(true);
+         
          setDone.setDaemon(true);*/
+        correctWithProbablesThread.setDaemon(true);
 
         this.setTitle("Smartpad");//sets the title to the window as "Smartpad"
         setImage();//calls the setImage method to set the imageicons of the windows
@@ -650,21 +651,27 @@ public class Notepad extends javax.swing.JFrame {
         um.redo();
     }//GEN-LAST:event_redoOperationActionPerformed
     Thread correctWithProbablesThread = new Thread() {
+
         public synchronized void run() {
             substitute();//call method substitute
+
         }
+
     };
 
-    ;
     private void correctIconActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_correctIconActionPerformed
+        synchronized (correctWithProbablesThread) {
+            //this method is called when user clicks on the correct button to make the file correct
+            if (((String) this.correctWithProbablesThread.getState().toString()).equals("TERMINATED")) {
+                System.out.println("thread has terminated");
 
-        //this method is called when user clicks on the correct button to make the file correct
-        if (((String) this.correctWithProbablesThread.getState().toString()).equals("TERMINATED")) {
-            System.out.println("thread has terminated");
+            } else if (((String) this.correctWithProbablesThread.getState().toString()).equals("WAITING")) {
+                System.out.println("thread will stop waiting now");
 
-            this.correctWithProbablesThread.start();
-        } else {
-            this.correctWithProbablesThread.start();
+                correctWithProbablesThread.notify();
+            } else {
+                this.correctWithProbablesThread.start();
+            }
         }
 
     }//GEN-LAST:event_correctIconActionPerformed
@@ -853,56 +860,63 @@ public class Notepad extends javax.swing.JFrame {
     }
 
     synchronized void substitute() {
-        Text temp = new Text();
+        while (true) {
+            Text temp = new Text();
 
-        String text = this.smartText.getText(); //get the text of all the panel
-        smartText.setTheText(temp.seperated(text));//takes the string from inside thesmart 
+            String text = this.smartText.getText(); //get the text of all the panel
+            smartText.setTheText(temp.seperated(text));//takes the string from inside thesmart
 
-        int loops = smartText.getTheText().getWords().size();
-        DoubleNode currentWord = smartText.getTheText().getWords().getFirstNode();
-        for (int i = 0; i < loops; i++) {
-            Word current = ((Word) currentWord.getItem());
-            //fist clean wordselector from previous usage
-            wordSelector.removeAllItems();
-            //then set the focus to it
-            this.smartText.requestFocus();
+            int loops = smartText.getTheText().getWords().size();
+            DoubleNode currentWord = smartText.getTheText().getWords().getFirstNode();
+            for (int i = 0; i < loops; i++) {
+                Word current = ((Word) currentWord.getItem());
+                //fist clean wordselector from previous usage
+                wordSelector.removeAllItems();
+                //then set the focus to it
+                this.smartText.requestFocus();
 
-            //set selected the old
-            this.smartText.setSelectionStart(current.getBegin());
-            this.smartText.setSelectionEnd(current.getEnd() + 1);
+                //set selected the old
+                this.smartText.setSelectionStart(current.getBegin());
+                this.smartText.setSelectionEnd(current.getEnd() + 1);
 
                 //System.out.println("Original word toString:" + current.toString());
-            //till here it just highlights every word in the text
-            //take the first probable word
-            DoubleNode currentProb = ((DoubleNode) current.getProb().getFirstNode());
+                //till here it just highlights every word in the text
+                //take the first probable word
+                DoubleNode currentProb = ((DoubleNode) current.getProb().getFirstNode());
 
-            for (int j = 0; j < current.getProb().size(); j++) {
+                for (int j = 0; j < current.getProb().size(); j++) {
 
                     //here creates a new smartMenuItem instance for each probable word and adds it into the word selector combobox
-                //smartMenuItem smi=new smartMenuItem(new Word("pavlos"),"HELLO");
-                smartMenuItem smi = new smartMenuItem((Word) currentProb.getItem(), ((Word) currentProb.getItem()).getTheWord(), current.getLength());
-                wordSelector.insertItemAt(smi, j);
+                    //smartMenuItem smi=new smartMenuItem(new Word("pavlos"),"HELLO");
+                    smartMenuItem smi = new smartMenuItem((Word) currentProb.getItem(), ((Word) currentProb.getItem()).getTheWord(), current.getLength());
+                    wordSelector.insertItemAt(smi, j);
 
-                currentProb = currentProb.getNext();
+                    currentProb = currentProb.getNext();
 
+                }
+                wordSelector.addItem(new smartMenuItem(current, this.smartText.getSelectedText()));
+
+                currentWord = currentWord.getNext();
+                //now pause the correction thread to make correction choices
+
+                wordSelector.setSelectedIndex(0);
+
+                try {
+                    correctWithProbablesThread.wait();
+
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                wordSelector.removeAllItems();
             }
-            wordSelector.addItem(new smartMenuItem(current, this.smartText.getSelectedText()));
-
-            currentWord = currentWord.getNext();
-            //now pause the correction thread to make correction choices
-
-            wordSelector.setSelectedIndex(0);
-
+            System.out.println("ended substitute operation");
             try {
                 correctWithProbablesThread.wait();
-
             } catch (InterruptedException ex) {
                 Logger.getLogger(Notepad.class.getName()).log(Level.SEVERE, null, ex);
             }
-
-            wordSelector.removeAllItems();
         }
-
     }
 
     //this method corrects the file instantly and replaces each word with each first probable word
@@ -975,14 +989,15 @@ public class Notepad extends javax.swing.JFrame {
     private javax.swing.JPopupMenu rclick;
     private javax.swing.JButton redoIconOnBar;
     private javax.swing.JMenuItem redoOperation;
-    private object.smartTextArea smartText;
+    public object.smartTextArea smartText;
     private javax.swing.JButton toolSave;
     private javax.swing.JButton tool_Open;
     private javax.swing.JButton tool_SaveAs;
     private javax.swing.JToolBar toolbar;
     private javax.swing.JButton undoIconOnBar;
     private javax.swing.JMenuItem undoOperation;
-    private javax.swing.JComboBox wordSelector;
+    public javax.swing.JComboBox wordSelector;
     // End of variables declaration//GEN-END:variables
+
 
 }
