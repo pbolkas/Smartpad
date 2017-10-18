@@ -232,6 +232,11 @@ public class Notepad extends javax.swing.JFrame  {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        smartText.addCaretListener(new javax.swing.event.CaretListener() {
+            public void caretUpdate(javax.swing.event.CaretEvent evt) {
+                smartTextCaretUpdate(evt);
+            }
+        });
         jScrollPane3.setViewportView(smartText);
 
         javax.swing.GroupLayout panLayout = new javax.swing.GroupLayout(pan);
@@ -721,6 +726,10 @@ public class Notepad extends javax.swing.JFrame  {
         }
 
     }//GEN-LAST:event_nextActionPerformed
+
+    private void smartTextCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_smartTextCaretUpdate
+        this.counts();
+    }//GEN-LAST:event_smartTextCaretUpdate
 
     /**
      * @param args the command line arguments

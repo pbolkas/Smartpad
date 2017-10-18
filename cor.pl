@@ -93,7 +93,7 @@ two_more(W,CW):-
 	append(CW1,D1,CW),
 	word(CW).
 adding(Phrase):-
-	append('../Notepad/cor.pl'),nl,
+	append('../cor.pl'),nl,
 	write(Phrase),
 	told.
 
